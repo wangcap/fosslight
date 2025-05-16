@@ -9,9 +9,10 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - ./db/conf.d:/etc/mysql/conf.d
-      - ./db/data:/var/lib/mysql
-      - ./db/initdb.d:/docker-entrypoint-initdb.d/
+      # SELinux 레이블 ':Z' 추가
+      - ./db/conf.d:/etc/mysql/conf.d:Z
+      - ./db/data:/var/lib/mysql:Z
+      - ./db/initdb.d:/docker-entrypoint-initdb.d/:Z
     env_file: docker.env
     environment:
       TZ: Asia/Seoul
@@ -30,7 +31,8 @@ services:
     ports:
       - "8180:8180"
     volumes:
-      - ./web-data:/data/fosslight
+      # SELinux 레이블 ':Z' 추가
+      - ./web-data:/data/fosslight:Z
     environment:
       TZ: Asia/Seoul
     command: sh -c "./wait-for db:3306 -t 120 && java -jar FOSSLight.war --root.dir=${ROOT_DIR:-/data/fosslight}
@@ -58,17 +60,19 @@ services:
     hostname: mail
     domainname: fosslight.org
     ports:
-      - "25:25"
-      - "587:587"
+      - "10025:25"  # Host port 10025 to container port 25
+      - "10587:587" # Host port 10587 to container port 587
     expose:
       - "25"
       - "587"
     volumes:
-      - ./mail/maildata/:/var/mail
-      - ./mail/mailstate/:/var/mail-state
-      - ./mail/maillogs/:/var/log/mail
-      - ./mail/config/:/tmp/docker-mailserver/
+      # SELinux 레이블 ':Z' 추가
+      - ./mail/maildata/:/var/mail:Z
+      - ./mail/mailstate/:/var/mail-state:Z
+      - ./mail/maillogs/:/var/log/mail:Z
+      - ./mail/config/:/tmp/docker-mailserver/:Z
     environment:
+      - OVERRIDE_HOSTNAME=mail.fosslight.org # 메일 서버가 FQDN을 명시적으로 인식하도록 설정 추가
       - ENABLE_SPAMASSASSIN=1
       - SPAMASSASSIN_SPAM_TO_INBOX=1
       - ENABLE_CLAMAV=0
